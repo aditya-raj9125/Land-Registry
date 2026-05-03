@@ -3,8 +3,9 @@ import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-verify";
 import "@openzeppelin/hardhat-upgrades";
 import * as dotenv from "dotenv";
+import * as path from "path";
 
-dotenv.config({ path: "../../.env" });
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 const PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY || "0x" + "0".repeat(64);
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY || "";

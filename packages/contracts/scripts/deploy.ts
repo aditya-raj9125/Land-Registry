@@ -126,12 +126,14 @@ async function main() {
 
   // Set TransferDeed address in LandRegistry
   const lr = await ethers.getContractAt("LandRegistry", addresses.LandRegistry!);
-  await lr.setTransferDeedContract(addresses.TransferDeed!);
+  const tx1 = await lr.setTransferDeedContract(addresses.TransferDeed!);
+  await tx1.wait();
   console.log("   ✓ LandRegistry → TransferDeed address set");
 
   // Grant COURT_ROLE to DisputeOracle in LandRegistry
   const COURT_ROLE = ethers.keccak256(ethers.toUtf8Bytes("COURT_ROLE"));
-  await lr.grantRole(COURT_ROLE, addresses.DisputeOracle!);
+  const tx2 = await lr.grantRole(COURT_ROLE, addresses.DisputeOracle!);
+  await tx2.wait();
   console.log("   ✓ LandRegistry → COURT_ROLE granted to DisputeOracle");
 
   // Grant MINTER_ROLE to backend wallet (using deployer for now)
@@ -143,17 +145,24 @@ async function main() {
   const sd = await ethers.getContractAt("StampDuty", addresses.StampDuty!);
 
   // Maharashtra rates (example)
-  await sd.setDutyRate("MH", "MUMBAI", 1, 600); // Residential 6%
-  await sd.setDutyRate("MH", "MUMBAI", 2, 700); // Commercial 7%
-  await sd.setDutyRate("MH", "PUNE", 1, 600);
+  const tx3 = await sd.setDutyRate("MH", "MUMBAI", 1, 600); // Residential 6%
+  await tx3.wait();
+  const tx4 = await sd.setDutyRate("MH", "MUMBAI", 2, 700); // Commercial 7%
+  await tx4.wait();
+  const tx5 = await sd.setDutyRate("MH", "PUNE", 1, 600);
+  await tx5.wait();
 
   // Delhi rates
-  await sd.setDutyRate("DL", "NEW_DELHI", 1, 600);
-  await sd.setDutyRate("DL", "NEW_DELHI", 2, 800);
+  const tx6 = await sd.setDutyRate("DL", "NEW_DELHI", 1, 600);
+  await tx6.wait();
+  const tx7 = await sd.setDutyRate("DL", "NEW_DELHI", 2, 800);
+  await tx7.wait();
 
   // UP rates
-  await sd.setDutyRate("UP", "LUCKNOW", 1, 700);
-  await sd.setDutyRate("UP", "NOIDA", 1, 700);
+  const tx8 = await sd.setDutyRate("UP", "LUCKNOW", 1, 700);
+  await tx8.wait();
+  const tx9 = await sd.setDutyRate("UP", "NOIDA", 1, 700);
+  await tx9.wait();
 
   console.log("   ✓ Stamp duty rates seeded for MH, DL, UP\n");
 

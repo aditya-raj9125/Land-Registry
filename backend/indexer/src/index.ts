@@ -1,13 +1,13 @@
 import { ethers } from 'ethers'
 import { Queue, Worker } from 'bullmq'
 import * as dotenv from 'dotenv'
-import { db } from '../api/src/lib/db'
-import { redis } from '../api/src/lib/redis'
+import { db } from '../../api/src/lib/db'
+import { redis } from '../../api/src/lib/redis'
 
 dotenv.config({ path: '../../.env' })
 
 // Load deployed addresses
-import deployedAddresses from '../../packages/contracts/deployments/sepolia-latest.json' assert { type: 'json' }
+import deployedAddresses from '../../../packages/contracts/deployments/sepolia-latest.json' assert { type: 'json' }
 
 // Minimal ABIs for event listening
 const LAND_REGISTRY_ABI = [

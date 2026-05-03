@@ -26,6 +26,13 @@
     "deploy": {
       "dependsOn": ["compile"],
       "cache": false
+    },
+    "db:migrate": {
+      "cache": false
+    },
+    "indexer": {
+      "cache": false,
+      "persistent": true
     }
   }
 }

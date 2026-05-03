@@ -6,8 +6,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "db:migrate": "node -r tsx/cjs scripts/migrate.ts",
-    "indexer": "tsx watch src/indexer/index.ts"
+    "db:migrate": "tsx scripts/migrate.ts",
+    "indexer": "tsx watch ../indexer/src/index.ts"
   },
   "dependencies": {
     "@trpc/server": "^11.0.0",

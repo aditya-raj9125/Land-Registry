@@ -19,6 +19,8 @@
     "contracts:compile": "turbo run compile --filter=@bhoomichain/contracts",
     "contracts:test": "turbo run test --filter=@bhoomichain/contracts",
     "contracts:deploy": "turbo run deploy --filter=@bhoomichain/contracts",
+    "db:migrate": "turbo run db:migrate --filter=@bhoomichain/api",
+    "indexer": "turbo run indexer --filter=@bhoomichain/api",
     "web:dev": "turbo run dev --filter=@bhoomichain/web",
     "gov:dev": "turbo run dev --filter=@bhoomichain/gov",
     "api:dev": "turbo run dev --filter=@bhoomichain/api"
