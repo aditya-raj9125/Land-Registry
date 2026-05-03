@@ -1,0 +1,55 @@
+# BhoomiChain .gitignore
+
+.claude/
+
+# ── Node / NPM ────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+.yarn/
+.npm/
+
+# ── Environment ───────────────────────────────────────────
+.env
+.env.local
+.env.production
+.env.development.local
+.env.test.local
+
+# ── Next.js ───────────────────────────────────────────────
+.next/
+out/
+build/
+dist/
+.turbo/
+
+# ── Smart Contracts ───────────────────────────────────────
+packages/contracts/artifacts/
+packages/contracts/cache/
+packages/contracts/deployments/*.json
+!packages/contracts/deployments/.gitkeep
+packages/contracts/typechain-types/
+
+# ── Logs ──────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+logs/
+
+# ── Testing ───────────────────────────────────────────────
+coverage/
+.nyc_output/
+
+# ── IDE ───────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# ── Secrets ───────────────────────────────────────────────
+*.pem
+*.key
+*.p12
+
+# ── Uploads ───────────────────────────────────────────────
+backend/api/uploads/

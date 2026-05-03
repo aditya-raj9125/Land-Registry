@@ -1,0 +1,39 @@
+{
+  "name": "bhoomichain",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BhoomiChain — India Blockchain Land Registry System",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "backend/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "contracts:compile": "turbo run compile --filter=@bhoomichain/contracts",
+    "contracts:test": "turbo run test --filter=@bhoomichain/contracts",
+    "contracts:deploy": "turbo run deploy --filter=@bhoomichain/contracts",
+    "web:dev": "turbo run dev --filter=@bhoomichain/web",
+    "gov:dev": "turbo run dev --filter=@bhoomichain/gov",
+    "api:dev": "turbo run dev --filter=@bhoomichain/api"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.0",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.0",
+    "@openzeppelin/hardhat-upgrades": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}
