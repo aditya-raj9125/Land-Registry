@@ -1,0 +1,16 @@
+{
+  "name": "BhoomiChain",
+  "short_name": "BhoomiChain",
+  "description": "National Blockchain Land Registry of India",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDF8F0",
+  "theme_color": "#B8860B",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

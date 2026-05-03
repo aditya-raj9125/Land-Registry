@@ -1,6 +1,6 @@
 # BhoomiChain — India Blockchain Land Registry System
 
-![BhoomiChain Hero](https://bhoomichain.in/hero.png) <!-- Replace with actual hero image if available -->
+
 
 BhoomiChain is a **ministerial-grade, end-to-end blockchain land registry system** built for the Indian government. It aims to digitize land records, prevent benami transactions, streamline property transfers, and provide an immutable audit trail for all land-related actions. Every piece of land in India is represented as a unique ERC-721 token (NFT) linked to a 14-digit Bhu-Aadhaar (ULPIN).
 
