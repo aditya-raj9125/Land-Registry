@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, useInView, useMotionValue, useSpring } from 'framer-motion'
 import Link from 'next/link'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
@@ -29,44 +29,82 @@ function AnimatedCounter({ value, suffix = '' }: { value: number; suffix?: strin
 }
 
 // ── India Map SVG placeholder ─────────────────────────────────────
-function IndiaMapAnimation() {
+function InteractiveFeatureHub() {
+  const [isMounted, setIsMounted] = useState(false)
+  
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  const features = [
+    { title: 'Immutable Ledger', desc: 'Tamper-proof records on Ethereum Sepolia.', icon: '🛡️', color: 'gold' },
+    { title: 'Real-time Sync', desc: 'Instant updates across all national nodes.', icon: '⚡', color: 'success' },
+    { title: 'Fraud Prevention', desc: 'AI-driven dispute and forgery detection.', icon: '🚫', color: 'error' },
+    { title: 'Global Access', desc: 'Secure verification for NRIs worldwide.', icon: '🌐', color: 'info' }
+  ]
+
   return (
-    <div className="relative w-full h-full flex items-center justify-center">
-      <svg viewBox="0 0 400 480" className="w-full h-full max-h-[480px] opacity-80">
-        {/* Simplified India silhouette */}
-        <path
-          d="M180 20 L220 15 L260 30 L290 60 L310 100 L320 140 L330 180 L340 220 L350 260 L340 300 L320 340 L290 370 L260 390 L230 410 L210 430 L190 440 L170 430 L150 410 L130 390 L110 370 L90 340 L75 300 L70 260 L75 220 L85 180 L90 140 L100 100 L115 70 L140 45 Z"
-          fill="none"
-          stroke="var(--color-gold)"
-          strokeWidth="1.5"
-          className="opacity-40"
-        />
-        {/* Pulsing transaction dots */}
-        {[
-          { cx: 180, cy: 150 }, { cx: 240, cy: 200 }, { cx: 160, cy: 280 },
-          { cx: 210, cy: 320 }, { cx: 270, cy: 180 }, { cx: 140, cy: 220 },
-          { cx: 290, cy: 260 }, { cx: 185, cy: 360 },
-        ].map((pos, i) => (
-          <g key={i}>
-            <circle cx={pos.cx} cy={pos.cy} r="4" fill="var(--color-gold)" opacity="0.8">
-              <animate attributeName="opacity" values="0.8;0.2;0.8" dur={`${2 + i * 0.3}s`} repeatCount="indefinite" />
-            </circle>
-            <circle cx={pos.cx} cy={pos.cy} r="10" fill="none" stroke="var(--color-gold)" strokeWidth="1" opacity="0.3">
-              <animate attributeName="r" values="4;16;4" dur={`${2 + i * 0.3}s`} repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.6;0;0.6" dur={`${2 + i * 0.3}s`} repeatCount="indefinite" />
-            </circle>
-          </g>
+    <div className="relative w-full h-full flex items-center justify-center p-4 lg:p-12">
+      {/* Background Ambience */}
+      <div className="absolute inset-0 bg-gold/5 blur-[100px] rounded-full animate-pulse pointer-events-none" />
+      
+      <div className="grid grid-cols-2 gap-4 relative z-10 w-full max-w-[500px]">
+        {features.map((f, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            whileHover={{ y: -5, scale: 1.02 }}
+            className="group relative bg-surface/40 backdrop-blur-xl border border-gold/10 rounded-3xl p-6 shadow-xl hover:border-gold/30 hover:shadow-gold/5 transition-all duration-300 cursor-pointer overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="text-3xl mb-4 transform group-hover:scale-110 transition-transform">{f.icon}</div>
+            <h3 className="font-display text-lg font-bold text-ink mb-1">{f.title}</h3>
+            <p className="text-[10px] leading-relaxed text-ink-muted uppercase tracking-wider">{f.desc}</p>
+            <div className="absolute top-0 right-0 w-12 h-12 overflow-hidden pointer-events-none">
+              <div className="absolute top-[-24px] right-[-24px] w-12 h-12 bg-gold/10 rotate-45 group-hover:bg-gold/20 transition-colors" />
+            </div>
+          </motion.div>
         ))}
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-2">🇮🇳</div>
-          <p className="font-mono text-xs text-[var(--color-gold)]">LIVE ON SEPOLIA</p>
+      </div>
+
+      {/* Floating security particles — Only on Client */}
+      {isMounted && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              animate={{ 
+                y: [0, -100, 0],
+                x: [0, Math.random() * 40 - 20, 0],
+                opacity: [0, 0.4, 0]
+              }}
+              transition={{ 
+                duration: 5 + Math.random() * 5,
+                repeat: Infinity,
+                delay: Math.random() * 5
+              }}
+              className="absolute w-1 h-1 bg-gold rounded-full"
+              style={{ 
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`
+              }}
+            />
+          ))}
         </div>
+      )}
+
+      {/* Center Connection Circle */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="w-[300px] h-[300px] border border-gold/5 rounded-full animate-[spin_20s_linear_infinite]" />
+        <div className="absolute w-[240px] h-[240px] border border-dashed border-gold/5 rounded-full animate-[spin_15s_linear_infinite_reverse]" />
       </div>
     </div>
   )
 }
+
+
 
 // ── Stat Bar Item ─────────────────────────────────────────────────
 function StatItem({ value, label, suffix }: { value: number; label: string; suffix?: string }) {
@@ -208,48 +246,41 @@ export default function LandingPage() {
       {/* ── Hero Section ── */}
       <section
         ref={heroRef}
-        className="relative min-h-[90vh] flex items-center dot-grid-bg overflow-hidden"
+        className="relative h-[calc(100vh-80px)] flex items-center dot-grid-bg overflow-hidden"
         style={{ background: `var(--color-cream)` }}
       >
         {/* Background pattern */}
         <div
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0 opacity-20"
           style={{
             backgroundImage: 'radial-gradient(circle, var(--color-border) 1px, transparent 1px)',
             backgroundSize: '24px 24px',
           }}
         />
 
-        {/* Gold gradient orb */}
-        <div
-          className="absolute top-20 right-0 w-[600px] h-[600px] opacity-10 pointer-events-none"
-          style={{
-            background: 'radial-gradient(circle, var(--color-gold-light) 0%, transparent 70%)',
-          }}
-        />
-
-        <div className="relative z-10 max-w-[1200px] mx-auto px-6 py-20 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center w-full">
+        <div className="relative z-10 max-w-[1200px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center w-full h-full">
 
           {/* Left: Hero Content */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
+            className="flex flex-col justify-center"
           >
             {/* Government badge */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 bg-[var(--color-gold-pale)] border border-[var(--color-gold)] rounded-full px-4 py-2 mb-8"
+              className="inline-flex items-center gap-2 bg-[var(--color-gold-pale)] border border-[var(--color-gold)] rounded-full px-3 py-1.5 mb-6 w-fit"
             >
-              <span className="text-base">🏛️</span>
-              <span className="text-sm font-medium text-[var(--color-gold)]">
-                National Blockchain Land Registry — Sepolia Testnet
+              <span className="text-sm">🏛️</span>
+              <span className="text-[11px] font-bold text-[var(--color-gold)] uppercase tracking-wider">
+                National Blockchain Land Registry
               </span>
             </motion.div>
 
-            <h1 className="font-display text-6xl xl:text-8xl font-bold leading-tight mb-6">
+            <h1 className="font-display text-5xl xl:text-7xl font-bold leading-[1.1] mb-4">
               <span className="text-[var(--color-ink)]">YOUR LAND,</span>
               <br />
               <span className="text-[var(--color-ink)]">FOREVER</span>
@@ -257,50 +288,50 @@ export default function LandingPage() {
               <span className="italic text-[var(--color-gold)]">YOURS.</span>
             </h1>
 
-            <p className="text-[var(--color-ink-muted)] text-lg leading-relaxed mb-10 max-w-lg">
-              India&apos;s first tamper-proof land registry. Every title certificate lives on a permanent, immutable record — impossible to forge, dispute, or steal. Built for 1.4 billion Indians.
+            <p className="text-[var(--color-ink-muted)] text-base leading-relaxed mb-8 max-w-md">
+              India&apos;s first tamper-proof land registry. Every title certificate lives on a permanent, immutable record — impossible to forge or steal.
             </p>
 
-            <div className="flex flex-wrap gap-4 mb-12">
-              <Link href="/search" className="btn btn-primary btn-lg">
+            <div className="flex flex-wrap gap-4 mb-8">
+              <Link href="/search" className="btn btn-primary">
                 Search Land Records
               </Link>
-              <Link href="/public/data" className="btn btn-secondary btn-lg">
+              <Link href="/public/data" className="btn btn-secondary">
                 Verify a Property
               </Link>
             </div>
 
-            {/* Trust indicators */}
-            <div className="flex flex-wrap gap-8 pt-8 border-t border-[var(--color-border)]">
+            {/* Trust indicators — Scaled down for one-page fit */}
+            <div className="flex flex-wrap gap-6 pt-6 border-t border-[var(--color-border)]">
               <div>
-                <div className="font-display text-2xl font-bold text-[var(--color-gold)]">
+                <div className="font-display text-xl font-bold text-[var(--color-gold)]">
                   <AnimatedCounter value={2_47_891} />
                 </div>
-                <div className="text-xs text-[var(--color-ink-muted)] uppercase tracking-wide mt-1">Parcels Registered</div>
+                <div className="text-[10px] text-[var(--color-ink-muted)] uppercase tracking-wide">Parcels On-Chain</div>
               </div>
               <div>
-                <div className="font-display text-2xl font-bold text-[var(--color-gold)]">
-                  <AnimatedCounter value={18} suffix=" States" />
+                <div className="font-display text-xl font-bold text-[var(--color-gold)]">
+                  <AnimatedCounter value={18} />
                 </div>
-                <div className="text-xs text-[var(--color-ink-muted)] uppercase tracking-wide mt-1">States Live</div>
+                <div className="text-[10px] text-[var(--color-ink-muted)] uppercase tracking-wide">States Connected</div>
               </div>
               <div>
-                <div className="font-display text-2xl font-bold text-[var(--color-gold)]">
+                <div className="font-display text-xl font-bold text-[var(--color-gold)]">
                   ₹<AnimatedCounter value={4821} suffix=" Cr" />
                 </div>
-                <div className="text-xs text-[var(--color-ink-muted)] uppercase tracking-wide mt-1">Stamp Duty Collected</div>
+                <div className="text-[10px] text-[var(--color-ink-muted)] uppercase tracking-wide">Revenue Secured</div>
               </div>
             </div>
           </motion.div>
 
-          {/* Right: India Map Animation */}
+          {/* Right: Interactive Feature Hub */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="h-[480px] hidden lg:block"
           >
-            <IndiaMapAnimation />
+            <InteractiveFeatureHub />
           </motion.div>
         </div>
       </section>
