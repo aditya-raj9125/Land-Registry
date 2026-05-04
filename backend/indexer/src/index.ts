@@ -1,10 +1,11 @@
+import * as dotenv from 'dotenv'
+import path from 'path'
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') })
+
 import { ethers } from 'ethers'
 import { Queue, Worker } from 'bullmq'
-import * as dotenv from 'dotenv'
 import { db } from '../../api/src/lib/db'
 import { redis } from '../../api/src/lib/redis'
-
-dotenv.config({ path: '../../.env' })
 
 // Load deployed addresses
 import deployedAddresses from '../../../packages/contracts/deployments/sepolia-latest.json' assert { type: 'json' }
@@ -45,6 +46,38 @@ const landRegistry = new ethers.Contract(deployedAddresses.LandRegistry, LAND_RE
 const transferDeed = new ethers.Contract(deployedAddresses.TransferDeed, TRANSFER_DEED_ABI, provider)
 const disputeOracle = new ethers.Contract(deployedAddresses.DisputeOracle, DISPUTE_ORACLE_ABI, provider)
 const stampDuty = new ethers.Contract(deployedAddresses.StampDuty, STAMP_DUTY_ABI, provider)
+
+// ── Startup Catch-up Logic ──────────────────────────────────────────
+async function syncHistoricalEvents() {
+  console.log('[Indexer] Starting historical sync...')
+  try {
+    // Get last processed block from DB
+    const res = await db.query('SELECT MAX(mint_block_number) as last_block FROM parcels')
+    const lastBlock = res.rows[0].last_block || 10780000; // Start from recent block if DB is empty
+    const currentBlock = await provider.getBlockNumber()
+    
+    console.log(`[Indexer] Syncing from block ${lastBlock} to ${currentBlock}...`)
+    
+    if (currentBlock > lastBlock) {
+      const CHUNK_SIZE = 10;
+      for (let i = lastBlock + 1; i <= currentBlock; i += CHUNK_SIZE) {
+        const toBlock = Math.min(i + CHUNK_SIZE - 1, currentBlock);
+        process.stdout.write(`\r[Indexer] Progress: ${(( (toBlock - lastBlock) / (currentBlock - lastBlock) ) * 100).toFixed(1)}%`);
+        
+        const logs = await landRegistry.queryFilter('ParcelMinted', i, toBlock)
+        for (const log of logs) {
+          if (log instanceof ethers.EventLog) {
+            const { tokenId, ulpin, owner, ipfsDocHash, areaInSqm } = log.args
+            await handleParcelMinted(tokenId, ulpin, owner, ipfsDocHash, areaInSqm, log)
+          }
+        }
+      }
+      console.log(`\n[Indexer] Historical sync complete.`)
+    }
+  } catch (err: any) {
+    console.error('[Indexer] Sync failed:', err.message)
+  }
+}
 
 // ── BullMQ Queue ──────────────────────────────────────────────────
 const eventQueue = new Queue('blockchain-events', {
@@ -201,5 +234,19 @@ provider.on('error', (err) => {
   console.error('[Indexer] Provider error:', err.message)
 })
 
-console.log('✓ BhoomiChain Blockchain Event Indexer running')
-console.log(`  → Listening on Sepolia: LandRegistry @ ${deployedAddresses.LandRegistry}`)
+async function main() {
+  console.log('────────────────────────────────────────────────')
+  console.log('🏛️  BHOOMICHAIN INDEXER STARTING')
+  console.log(`📂 DB_URL: ${process.env.DATABASE_URL ? 'LOADED' : 'MISSING'}`)
+  console.log('────────────────────────────────────────────────')
+
+  // Perform catch-up sync for missed events
+  await syncHistoricalEvents()
+
+  console.log('✅ Indexer is now listening for real-time events...')
+}
+
+main().catch(err => {
+  console.error('[Indexer] Fatal error during startup:', err)
+  process.exit(1)
+})

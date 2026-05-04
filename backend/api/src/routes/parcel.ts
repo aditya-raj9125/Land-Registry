@@ -5,6 +5,27 @@ import { redis } from '../lib/redis'
 
 export const parcelRouter = Router()
 
+// GET /api/parcels/search — search parcels
+parcelRouter.get('/search', async (req, res) => {
+  const { q, page = '1' } = req.query as Record<string, string>
+  try {
+    const offset = (parseInt(page) - 1) * 20
+    
+    // Simple search across ULPIN and District
+    const result = await db.query(
+      `SELECT * FROM parcels 
+       WHERE ulpin ILIKE $1 OR district ILIKE $1 
+       LIMIT 20 OFFSET $2`,
+      [`%${q}%`, offset]
+    )
+    
+    return res.json(result.rows)
+  } catch (err) {
+    console.error('[search]', err)
+    return res.status(500).json({ error: 'Search failed', code: 'SEARCH_ERROR' })
+  }
+})
+
 // GET /api/parcels/:ulpin — fetch single parcel
 parcelRouter.get('/:ulpin', async (req, res) => {
   const { ulpin } = req.params
@@ -33,25 +54,6 @@ parcelRouter.get('/:ulpin', async (req, res) => {
   } catch (err) {
     console.error('[parcel/:ulpin]', err)
     return res.status(500).json({ error: 'Failed to fetch parcel', code: 'DB_ERROR' })
-  }
-})
-
-// GET /api/parcels/search — full-text search via Meilisearch
-parcelRouter.get('/search', async (req, res) => {
-  const { q, type, status, district, minArea, maxArea, page = '1' } = req.query as Record<string, string>
-  try {
-    // In production: call Meilisearch
-    // const results = await meilisearch.index('parcels').search(q, { filter, limit: 20, offset })
-    
-    // Mock response
-    return res.json({
-      hits: [],
-      total: 0,
-      page: parseInt(page),
-      query: q,
-    })
-  } catch (err) {
-    return res.status(500).json({ error: 'Search failed', code: 'SEARCH_ERROR' })
   }
 })
 

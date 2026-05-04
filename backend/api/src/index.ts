@@ -9,8 +9,21 @@ import { bankRouter } from './routes/bank'
 import { grievanceRouter } from './routes/grievance'
 import { rateLimiter } from './middleware/rateLimiter'
 import { authMiddleware } from './middleware/auth'
+import path from 'path'
 
-dotenv.config({ path: '../../.env' })
+const envPath = path.resolve(__dirname, '../../../../.env')
+dotenv.config({ path: envPath })
+
+// Fallback if the above fails (sometimes happens in certain environments)
+if (!process.env.DATABASE_URL) {
+  dotenv.config({ path: path.resolve(process.cwd(), '../../.env') })
+}
+
+console.log('────────────────────────────────────────────────')
+console.log('🚀 BHOOMICHAIN API STARTUP')
+console.log(`📂 CWD: ${process.cwd()}`)
+console.log(`📂 DB_URL: ${process.env.DATABASE_URL ? 'DB_URL_LOADED' : 'DB_URL_MISSING'}`)
+console.log('────────────────────────────────────────────────')
 
 const app = express()
 const PORT = process.env.API_PORT || 4000

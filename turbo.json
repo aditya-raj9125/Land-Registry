@@ -33,6 +33,12 @@
     "indexer": {
       "cache": false,
       "persistent": true
+    },
+    "health-check": {
+      "cache": false
+    },
+    "test:e2e": {
+      "cache": false
     }
   }
 }
