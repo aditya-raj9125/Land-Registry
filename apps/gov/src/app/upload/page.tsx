@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { useAccount, useContractWrite } from 'wagmi'
+import { useAccount, useWriteContract } from 'wagmi'
 import { ethers } from 'ethers'
 import deployedAddresses from '../../../../../packages/contracts/deployments/sepolia-latest.json'
 

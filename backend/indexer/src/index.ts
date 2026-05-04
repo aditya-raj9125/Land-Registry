@@ -17,6 +17,8 @@ const LAND_REGISTRY_ABI = [
   'event EncumbranceUpdated(uint256 indexed tokenId, bool hasEncumbrance, string details)',
   'event ParcelFrozen(uint256 indexed tokenId, string reason)',
   'event ParcelUnfrozen(uint256 indexed tokenId, string reason)',
+  'function getLandDetails(uint256 tokenId) external view returns (tuple(string ulpin, string ipfsDocHash, bytes32 sha256DocHash, uint8 landType, uint256 areaInSqm, string districtCode, string stateCode, bool hasEncumbrance, bool isFrozen, uint8 titleStatus, uint256 askingPrice, uint256 mintedAt, uint256 updatedAt))',
+  'function getLandCoordinates(uint256 tokenId) external view returns (tuple(int256 latitude, int256 longitude)[])',
 ]
 
 const TRANSFER_DEED_ABI = [
@@ -162,14 +164,54 @@ const worker = new Worker(
 
     switch (name) {
       case 'parcel-minted':
-        await db.query(
-          `INSERT INTO parcels (token_id, ulpin, owner_address, ipfs_document_hash, title_status, mint_transaction_hash, mint_block_number, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, 'PENDING', $5, $6, NOW(), NOW())
-           ON CONFLICT (ulpin) DO UPDATE SET owner_address=$3, updated_at=NOW()`,
-          [data.tokenId, data.ulpin, data.owner, data.ipfsDocHash, data.txHash, data.blockNumber]
-        )
-        // Invalidate Redis cache
-        await redis.del(`parcel:${data.ulpin}`)
+        try {
+          // Deep Sync: Fetch full metadata from the contract
+          const details = await landRegistry.getLandDetails(data.tokenId);
+          const coords = await landRegistry.getLandCoordinates(data.tokenId);
+          
+          await db.query(
+            `INSERT INTO parcels (
+              token_id, ulpin, owner_address, ipfs_document_hash, 
+              land_type, area_sqm, district_code, state_code,
+              title_status, mint_transaction_hash, mint_block_number, 
+              created_at, updated_at
+            )
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'PENDING', $9, $10, NOW(), NOW())
+             ON CONFLICT (ulpin) DO UPDATE SET 
+              owner_address=$3, 
+              land_type=$5, 
+              area_sqm=$6, 
+              district_code=$7, 
+              state_code=$8,
+              updated_at=NOW()`,
+            [
+              data.tokenId, 
+              data.ulpin, 
+              data.owner, 
+              data.ipfsDocHash,
+              Number(details.landType),
+              Number(details.areaInSqm),
+              details.districtCode,
+              details.stateCode,
+              data.txHash, 
+              data.blockNumber
+            ]
+          )
+          
+          // Store coordinates if the table exists
+          for (const coord of coords) {
+            await db.query(
+              `INSERT INTO parcel_coordinates (token_id, latitude, longitude) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+              [data.tokenId, Number(coord.latitude), Number(coord.longitude)]
+            ).catch(() => {}); // Ignore if table doesn't exist yet
+          }
+
+          // Invalidate Redis cache
+          await redis.del(`parcel:${data.ulpin}`)
+          console.log(`[Worker] Deep Sync Successful for ULPIN: ${data.ulpin}`)
+        } catch (err: any) {
+          console.error(`[Worker] Deep Sync Failed for ULPIN ${data.ulpin}:`, err.message)
+        }
         break
 
       case 'title-transferred':

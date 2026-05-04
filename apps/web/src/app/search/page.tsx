@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 
@@ -36,6 +36,8 @@ function statusBadge(status: string) {
 export default function SearchPage() {
   const [query, setQuery] = useState('')
   const [view, setView] = useState<'list' | 'map'>('list')
+  const [parcels, setParcels] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({
     type: 'all',
     status: 'all',
@@ -43,17 +45,49 @@ export default function SearchPage() {
     maxArea: '',
   })
 
-  const filtered = MOCK_PARCELS.filter((p) => {
-    const q = query.toLowerCase()
-    const matchQuery =
-      !q ||
-      p.ulpin.includes(q) ||
-      p.khasra.toLowerCase().includes(q) ||
-      p.district.toLowerCase().includes(q) ||
-      p.state.toLowerCase().includes(q)
+  // Fetch live parcels from the API
+  useEffect(() => {
+    const fetchParcels = async () => {
+      setLoading(true)
+      try {
+        const response = await fetch(`http://localhost:4000/api/parcels/search?q=${query}`)
+        const data = await response.json()
+        
+        // Transform API data to match UI structure
+        const liveParcels = data.map((p: any) => ({
+          ulpin: p.ulpin,
+          khasra: p.khasra_number || 'N/A',
+          area: `${p.area_sqm || '0'} Sqm`,
+          district: p.district_code || 'National',
+          state: p.state_code || 'India',
+          price: p.asking_price ? `₹${p.asking_price}` : 'Not Listed',
+          status: p.title_status || 'CLEAR',
+          type: p.land_type === 1 ? 'Residential' : 'Agricultural',
+          listed: new Date(p.created_at).toLocaleDateString()
+        }))
+
+        // Combine live data with mock data (mock data only shows when query is empty)
+        if (!query) {
+          setParcels([...liveParcels, ...MOCK_PARCELS])
+        } else {
+          setParcels(liveParcels)
+        }
+      } catch (err) {
+        console.error('Failed to fetch parcels:', err)
+        setParcels(MOCK_PARCELS)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    const timer = setTimeout(fetchParcels, 300)
+    return () => clearTimeout(timer)
+  }, [query])
+
+  const filtered = parcels.filter((p) => {
     const matchType = filters.type === 'all' || p.type.toLowerCase() === filters.type
     const matchStatus = filters.status === 'all' || p.status === filters.status
-    return matchQuery && matchType && matchStatus
+    return matchType && matchStatus
   })
 
   return (
@@ -159,7 +193,7 @@ export default function SearchPage() {
           <div className="p-3 bg-[var(--color-gold-pale)] rounded-lg border border-[var(--color-border)]">
             <p className="text-xs text-[var(--color-ink-muted)]">
               Showing <strong className="text-[var(--color-ink)]">{filtered.length}</strong> of{' '}
-              <strong className="text-[var(--color-ink)]">{MOCK_PARCELS.length}</strong> parcels
+              <strong className="text-[var(--color-ink)]">{parcels.length}</strong> parcels
             </p>
           </div>
         </aside>
