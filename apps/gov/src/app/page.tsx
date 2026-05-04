@@ -49,9 +49,9 @@ export default function GovHomePage() {
               <Link href="/upload" className="px-8 py-4 bg-gold text-black font-bold rounded-2xl hover:bg-yellow-500 hover:scale-[1.02] transition-all flex items-center gap-3">
                 <span>➕</span> New Parcel Upload
               </Link>
-              <button className="px-8 py-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all font-medium">
+              <Link href="/records" className="px-8 py-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all font-medium">
                 View All Records
-              </button>
+              </Link>
             </div>
           </motion.div>
 
