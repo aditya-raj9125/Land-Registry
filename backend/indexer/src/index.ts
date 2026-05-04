@@ -189,7 +189,7 @@ const worker = new Worker(
               data.ulpin, 
               data.owner, 
               data.ipfsDocHash,
-              Number(details.landType),
+              ['AGRICULTURAL','RESIDENTIAL','COMMERCIAL','INDUSTRIAL','FOREST','GOVERNMENT','MIXED'][Number(details.landType)] || 'AGRICULTURAL',
               Number(details.areaInSqm),
               details.districtCode,
               details.stateCode,

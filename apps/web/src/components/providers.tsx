@@ -5,6 +5,7 @@ import { WagmiProvider } from 'wagmi'
 import { RainbowKitProvider, darkTheme, lightTheme } from '@rainbow-me/rainbowkit'
 import { wagmiConfig, chains } from '@/lib/wagmi'
 import '@rainbow-me/rainbowkit/styles.css'
+import '@/lib/i18n'
 import { useState } from 'react'
 
 export function Providers({ children }: { children: React.ReactNode }) {

@@ -11,7 +11,9 @@ CREATE TABLE IF NOT EXISTS parcels (
   ulpin               VARCHAR(14) UNIQUE NOT NULL,
   khasra_number       VARCHAR(50),
   district            VARCHAR(100),
+  district_code       VARCHAR(10),
   state               VARCHAR(100),
+  state_code          VARCHAR(10),
   village             VARCHAR(100),
   area_sqm            DECIMAL(12, 2),
   coordinates         GEOMETRY(POLYGON, 4326),  -- PostGIS polygon

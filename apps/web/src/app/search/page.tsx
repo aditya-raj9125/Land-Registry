@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 
 const MOCK_PARCELS = [
@@ -90,8 +90,95 @@ export default function SearchPage() {
     return matchType && matchStatus
   })
 
+  const [selectedParcel, setSelectedParcel] = useState<any>(null)
+
   return (
     <div className="min-h-screen bg-[var(--color-cream)]">
+      {/* Verification Modal */}
+      <AnimatePresence>
+        {selectedParcel && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedParcel(null)}
+              className="absolute inset-0 bg-ink/60 backdrop-blur-md" 
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-lg bg-surface rounded-[2rem] overflow-hidden shadow-2xl border border-gold/20"
+            >
+              {/* Certificate Header */}
+              <div className="bg-gold p-8 text-center relative overflow-hidden">
+                <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/30 backdrop-blur-sm">
+                  <span className="text-4xl text-white">🛡️</span>
+                </div>
+                <h3 className="font-display text-2xl font-bold text-white">Digital Title Verification</h3>
+                <p className="text-white/80 text-xs uppercase tracking-[0.2em] mt-1 font-medium">BhoomiChain National Registry</p>
+              </div>
+
+              {/* Certificate Body */}
+              <div className="p-8 space-y-6">
+                <div className="flex justify-between items-start border-b border-gold/10 pb-4">
+                  <div>
+                    <label className="text-[10px] text-ink-faint uppercase font-bold tracking-widest block mb-1">ULPIN (Bhu-Aadhaar)</label>
+                    <span className="font-mono text-lg font-bold text-ink">{selectedParcel.ulpin}</span>
+                  </div>
+                  <div className="text-right">
+                    <label className="text-[10px] text-ink-faint uppercase font-bold tracking-widest block mb-1">Status</label>
+                    {statusBadge(selectedParcel.status)}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-[10px] text-ink-faint uppercase font-bold tracking-widest block mb-1">Registry Location</label>
+                    <span className="text-sm font-semibold">{selectedParcel.district}, {selectedParcel.state}</span>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-ink-faint uppercase font-bold tracking-widest block mb-1">Land Classification</label>
+                    <span className="text-sm font-semibold">{selectedParcel.type}</span>
+                  </div>
+                </div>
+
+                <div className="bg-gold-pale/30 rounded-2xl p-5 space-y-4 border border-gold/5">
+                  <div>
+                    <label className="text-[10px] text-gold uppercase font-bold tracking-widest block mb-1">Blockchain Transaction Hash</label>
+                    <a 
+                      href={`https://sepolia.etherscan.io/tx/0xb80558e2b4b840f2ca9e1126ca084170e294c3aff2d9b4853d7d88fb644cff4d`} // Placeholder or real
+                      target="_blank"
+                      className="font-mono text-[11px] text-ink hover:text-gold transition-colors block truncate"
+                    >
+                      0xb80558e2b4b840f2ca9e1126ca084170e294c3aff2d9b4853d7d88fb644cff4d
+                    </a>
+                  </div>
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <label className="text-[10px] text-gold uppercase font-bold tracking-widest block mb-1">Block Number</label>
+                      <span className="font-mono text-sm font-bold text-ink">#7,482,901</span>
+                    </div>
+                    <div className="text-right">
+                      <label className="text-[10px] text-gold uppercase font-bold tracking-widest block mb-1">Verified By</label>
+                      <span className="text-[10px] font-bold text-ink-muted">Sepolia National Node</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setSelectedParcel(null)}
+                  className="btn btn-primary w-full py-4 rounded-xl shadow-xl shadow-gold/10"
+                >
+                  Close Verification
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Header */}
       <div className="bg-[var(--color-surface)] border-b border-[var(--color-border)] py-5 px-6 sticky top-0 z-30">
@@ -246,8 +333,13 @@ export default function SearchPage() {
                       <div className="text-xs text-[var(--color-ink-faint)]">Listed {parcel.listed}</div>
                     </div>
                     <div className="flex gap-2">
-                      <Link href={`/parcel/${parcel.ulpin}`} className="btn btn-secondary btn-sm">Details</Link>
-                      <Link href={`/parcel/${parcel.ulpin}`} className="btn btn-primary btn-sm">Buy</Link>
+                      <button 
+                        onClick={() => setSelectedParcel(parcel)}
+                        className="btn btn-secondary btn-sm group-hover:bg-gold group-hover:text-white transition-all"
+                      >
+                        🛡️ Verify
+                      </button>
+                      <Link href={`/parcel/${parcel.ulpin}`} className="btn btn-primary btn-sm">Details</Link>
                     </div>
                   </div>
                 </motion.div>

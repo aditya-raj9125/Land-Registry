@@ -2,8 +2,41 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, useInView, useMotionValue, useSpring } from 'framer-motion'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Link from 'next/link'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
+import { useTranslation } from 'react-i18next'
+
+// ── Language Switcher ──────────────────────────────────────────────
+function LanguageSwitcher() {
+  const { i18n } = useTranslation()
+  const languages = [
+    { code: 'en', label: 'EN', name: 'English' },
+    { code: 'hi', label: 'हिं', name: 'Hindi' },
+    { code: 'mr', label: 'मरा', name: 'Marathi' },
+    { code: 'ta', label: 'தமி', name: 'Tamil' }
+  ]
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-1.5 bg-gold/5 border border-gold/10 rounded-full">
+      {languages.map((lang) => (
+        <button
+          key={lang.code}
+          onClick={() => i18n.changeLanguage(lang.code)}
+          className={`text-[10px] font-bold w-8 h-8 rounded-full transition-all flex items-center justify-center ${
+            i18n.language === lang.code 
+              ? 'bg-gold text-white shadow-lg' 
+              : 'text-gold/60 hover:text-gold hover:bg-gold/10'
+          }`}
+          title={lang.name}
+        >
+          {lang.label}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 // ── Animated Counter ──────────────────────────────────────────────
 function AnimatedCounter({ value, suffix = '' }: { value: number; suffix?: string }) {
@@ -201,7 +234,35 @@ function ParcelCard({ ulpin, area, district, price, status }: {
 
 // ── Main Landing Page ─────────────────────────────────────────────
 export default function LandingPage() {
-  const heroRef = useRef(null)
+  const { t } = useTranslation()
+  const heroRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger)
+
+    // Parallax India Map
+    gsap.to(mapRef.current, {
+      y: 150,
+      ease: "none",
+      scrollTrigger: {
+        trigger: heroRef.current,
+        start: "top top",
+        end: "bottom top",
+        scrub: true
+      }
+    })
+
+    // Content fade and lift
+    gsap.from(contentRef.current, {
+      y: 50,
+      opacity: 0,
+      duration: 1.2,
+      ease: "power4.out",
+      delay: 0.2
+    })
+  }, [])
 
   const featuredParcels = [
     { ulpin: '14010100000001', area: '2.4 Acres Agricultural', district: 'Patna, Bihar', price: '₹32,00,000', status: 'CLEAR' as const },
@@ -226,19 +287,20 @@ export default function LandingPage() {
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
-            <Link href="/search" className="text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-gold)] transition-colors">Search Land</Link>
-            <Link href="/map" className="text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-gold)] transition-colors">Map View</Link>
-            <Link href="/public/data" className="text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-gold)] transition-colors">Verify Property</Link>
-            <Link href="/nri" className="text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-gold)] transition-colors">NRI Services</Link>
+            <Link href="/search" className="text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-gold)] transition-colors">{t('nav.search')}</Link>
+            <Link href="/map" className="text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-gold)] transition-colors">{t('nav.map')}</Link>
+            <Link href="/public/data" className="text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-gold)] transition-colors">{t('nav.verify')}</Link>
+            <Link href="/nri" className="text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-gold)] transition-colors">{t('nav.nri')}</Link>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            <LanguageSwitcher />
             <ConnectButton
               label="Connect Wallet"
               accountStatus="avatar"
               chainStatus="icon"
             />
-            <Link href="/dashboard" className="btn btn-primary btn-sm">My Properties</Link>
+            <Link href="/dashboard" className="btn btn-primary btn-sm">{t('nav.dashboard')}</Link>
           </div>
         </div>
       </nav>
@@ -249,24 +311,21 @@ export default function LandingPage() {
         className="relative h-[calc(100vh-80px)] flex items-center dot-grid-bg overflow-hidden"
         style={{ background: `var(--color-cream)` }}
       >
-        {/* Background pattern */}
-        <div
-          className="absolute inset-0 opacity-20"
+        {/* Parallax India Map Silhouette */}
+        <div 
+          ref={mapRef}
+          className="absolute right-[-10%] top-[10%] w-[80%] h-[120%] opacity-[0.03] pointer-events-none z-0 select-none"
           style={{
-            backgroundImage: 'radial-gradient(circle, var(--color-border) 1px, transparent 1px)',
-            backgroundSize: '24px 24px',
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M30,10 L70,10 L80,50 L50,90 L20,50 Z' fill='%23B8860B'/%3E%3C/svg%3E")`,
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat'
           }}
         />
 
         <div className="relative z-10 max-w-[1200px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center w-full h-full">
 
           {/* Left: Hero Content */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="flex flex-col justify-center"
-          >
+          <div ref={contentRef} className="flex flex-col justify-center">
             {/* Government badge */}
             <motion.div
               initial={{ opacity: 0 }}
@@ -276,20 +335,20 @@ export default function LandingPage() {
             >
               <span className="text-sm">🏛️</span>
               <span className="text-[11px] font-bold text-[var(--color-gold)] uppercase tracking-wider">
-                National Blockchain Land Registry
+                {t('hero.badge')}
               </span>
             </motion.div>
 
             <h1 className="font-display text-5xl xl:text-7xl font-bold leading-[1.1] mb-4">
-              <span className="text-[var(--color-ink)]">YOUR LAND,</span>
+              <span className="text-[var(--color-ink)]">{t('hero.title_line1')}</span>
               <br />
-              <span className="text-[var(--color-ink)]">FOREVER</span>
+              <span className="text-[var(--color-ink)]">{t('hero.title_line2')}</span>
               <br />
-              <span className="italic text-[var(--color-gold)]">YOURS.</span>
+              <span className="italic text-[var(--color-gold)]">{t('hero.title_line3')}</span>
             </h1>
 
             <p className="text-[var(--color-ink-muted)] text-base leading-relaxed mb-8 max-w-md">
-              India&apos;s first tamper-proof land registry. Every title certificate lives on a permanent, immutable record — impossible to forge or steal.
+              {t('hero.desc')}
             </p>
 
             <div className="flex flex-wrap gap-4 mb-8">
@@ -322,7 +381,7 @@ export default function LandingPage() {
                 <div className="text-[10px] text-[var(--color-ink-muted)] uppercase tracking-wide">Revenue Secured</div>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Right: Interactive Feature Hub */}
           <motion.div
