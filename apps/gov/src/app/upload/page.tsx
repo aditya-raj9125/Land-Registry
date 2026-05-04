@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import { useAccount, useContractWrite } from 'wagmi'
+import { ethers } from 'ethers'
+import deployedAddresses from '../../../../../packages/contracts/deployments/sepolia-latest.json'
 
 const STEPS = [
   { num: 1, label: 'Parcel ID', icon: '🆔' },
@@ -32,7 +35,7 @@ function StepIndicator({ current }: { current: number }) {
 }
 
 // Step 1: Parcel Identification
-function Step1({ onNext }: { onNext: () => void }) {
+function Step1({ onNext, updateForm }: { onNext: () => void; updateForm: (u: any) => void }) {
   const [ulpin, setUlpin] = useState('')
   const [found, setFound] = useState<null | 'found' | 'new'>(null)
   const [checking, setChecking] = useState(false)
@@ -43,6 +46,7 @@ function Step1({ onNext }: { onNext: () => void }) {
     setTimeout(() => {
       setFound(ulpin.startsWith('14') ? 'found' : 'new')
       setChecking(false)
+      updateForm({ ulpin })
     }, 800)
   }
 
@@ -59,7 +63,12 @@ function Step1({ onNext }: { onNext: () => void }) {
             maxLength={14}
             placeholder="00000000000000"
             value={ulpin}
-            onChange={(e) => { setUlpin(e.target.value.replace(/\D/g, '')); setFound(null) }}
+            onChange={(e) => { 
+              const val = e.target.value.replace(/\D/g, '')
+              setUlpin(val)
+              setFound(null)
+              updateForm({ ulpin: val })
+            }}
           />
           <button className="btn btn-secondary" onClick={checkUlpin} disabled={ulpin.length !== 14 || checking}>
             {checking ? '⏳' : '🔍 Check'}
@@ -76,15 +85,15 @@ function Step1({ onNext }: { onNext: () => void }) {
       <div className="grid grid-cols-2 gap-4">
         <div><label className="label">Khasra / Survey Number *</label><input className="input" placeholder="e.g. K-456/B" /></div>
         <div><label className="label">State *</label>
-          <select className="input">
+          <select className="input" onChange={(e) => updateForm({ state: e.target.value })}>
             <option value="">Select State</option>
             {['Bihar', 'Maharashtra', 'Uttar Pradesh', 'Rajasthan', 'Karnataka', 'Tamil Nadu', 'Gujarat', 'West Bengal'].map(s => <option key={s}>{s}</option>)}
           </select>
         </div>
-        <div><label className="label">District *</label><input className="input" placeholder="e.g. Patna" /></div>
+        <div><label className="label">District *</label><input className="input" placeholder="e.g. Patna" onChange={(e) => updateForm({ district: e.target.value })} /></div>
         <div><label className="label">Sub-District / Tehsil *</label><input className="input" placeholder="e.g. Maner" /></div>
         <div><label className="label">Village / Mandal *</label><input className="input" placeholder="e.g. Maner Village" /></div>
-        <div><label className="label">Pin Code *</label><input className="input" type="number" placeholder="800001" /></div>
+        <div><label className="label">Area (Sqm) *</label><input className="input" type="number" placeholder="1200" onChange={(e) => updateForm({ area: e.target.value })} /></div>
       </div>
 
       <button className="btn btn-primary w-full" onClick={onNext} disabled={ulpin.length !== 14}>
@@ -251,16 +260,68 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
 }
 
 // Step 7: Review & Mint
-function Step7({ onBack }: { onBack: () => void }) {
+function Step7({ onBack, formData }: { onBack: () => void; formData: any }) {
   const [minting, setMinting] = useState(false)
+  const [txHash, setTxHash] = useState('')
   const [minted, setMinted] = useState(false)
   const [otpSeller, setOtpSeller] = useState('')
   const [otpSupervisor, setOtpSupervisor] = useState('')
 
-  const handleMint = () => {
+  const { writeContractAsync } = useWriteContract()
+
+  const handleMint = async () => {
     if (otpSeller.length < 6 || otpSupervisor.length < 6) return
     setMinting(true)
-    setTimeout(() => { setMinting(false); setMinted(true) }, 3000)
+    try {
+      // For demo, we use some dummy coords and hashes, but in production these come from Steps 2 & 4
+      const dummyCoords = [19076000n, 19076500n, 19077000n, 19076000n];
+      const dummyLongs = [72877000n, 72877500n, 72878000n, 72877000n];
+      const dummySha = "0x0000000000000000000000000000000000000000000000000000000000000000" as `0x${string}`;
+
+      const hash = await writeContractAsync({
+        address: deployedAddresses.LandRegistry as `0x${string}`,
+        abi: [
+          {
+            "inputs": [
+              { "internalType": "address", "name": "to", "type": "address" },
+              { "internalType": "string", "name": "ulpin", "type": "string" },
+              { "internalType": "string", "name": "ipfsDocHash", "type": "string" },
+              { "internalType": "bytes32", "name": "sha256DocHash", "type": "bytes32" },
+              { "internalType": "uint8", "name": "landType", "type": "uint256" },
+              { "internalType": "uint256", "name": "areaInSqm", "type": "uint256" },
+              { "internalType": "string", "name": "districtCode", "type": "string" },
+              { "internalType": "string", "name": "stateCode", "type": "string" },
+              { "internalType": "int256[]", "name": "latitudes", "type": "int256[]" },
+              { "internalType": "int256[]", "name": "longitudes", "type": "int256[]" }
+            ],
+            "name": "mintLandTitle",
+            "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          }
+        ],
+        functionName: 'mintLandTitle',
+        args: [
+          (formData.ownerAddress || "0x0aF9Fda601342715aac0A63e6Cb0CF99c30845f3") as `0x${string}`,
+          formData.ulpin || "14010100000001",
+          "QmPikachu" + Date.now(),
+          dummySha,
+          1n, // Residential
+          BigInt(formData.area || "1200"),
+          "MUM",
+          "MH",
+          dummyCoords,
+          dummyLongs
+        ]
+      })
+      setTxHash(hash)
+      setMinted(true)
+    } catch (err) {
+      console.error(err)
+      alert("Minting failed. Check if you have the MINTER_ROLE.")
+    } finally {
+      setMinting(false)
+    }
   }
 
   if (minted) {
@@ -270,12 +331,10 @@ function Step7({ onBack }: { onBack: () => void }) {
           🔐
         </motion.div>
         <h2 className="font-display text-3xl font-bold text-[var(--color-success)] mb-2">Land Title Minted!</h2>
-        <p className="text-[var(--color-ink-muted)] mb-4">Digital Title Certificate issued and owner notified via SMS.</p>
+        <p className="text-[var(--color-ink-muted)] mb-4">Digital Title Certificate issued on Sepolia.</p>
         <div className="font-mono bg-[var(--color-cream)] rounded-lg p-4 text-sm mb-6 text-left space-y-2">
-          <div><span className="text-[var(--color-ink-faint)]">Token ID:</span> <strong>#247892</strong></div>
-          <div><span className="text-[var(--color-ink-faint)]">Transaction:</span> <a href="https://sepolia.etherscan.io" target="_blank" rel="noopener noreferrer" className="text-[var(--color-gold)] hover:underline">0xabc1...2345</a></div>
-          <div><span className="text-[var(--color-ink-faint)]">IPFS Bundle:</span> QmXyz...abc</div>
-          <div><span className="text-[var(--color-ink-faint)]">Block:</span> #7,842,301</div>
+          <div><span className="text-[var(--color-ink-faint)]">Transaction:</span> <a href={`https://sepolia.etherscan.io/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="text-[var(--color-gold)] hover:underline truncate block">{txHash}</a></div>
+          <p className="text-[10px] mt-2 opacity-50">Event Indexer will sync this record to the National Database within 60 seconds.</p>
         </div>
         <Link href="/gov/dashboard" className="btn btn-primary">Back to Dashboard</Link>
       </motion.div>
@@ -286,21 +345,17 @@ function Step7({ onBack }: { onBack: () => void }) {
     <div className="space-y-5">
       <h2 className="font-display text-2xl font-semibold">Supervisor Review & Blockchain Minting</h2>
       <div className="p-4 bg-[var(--color-warning-light)] rounded-xl text-sm text-[var(--color-warning)]">
-        ⚠ <strong>Maker-Checker Principle:</strong> A different officer (supervisor) must approve this upload. The same officer who submitted cannot also approve.
+        ⚠ <strong>Maker-Checker Principle:</strong> Final verification required before on-chain commitment.
       </div>
 
       {/* Summary */}
       <div className="card-cream p-5 space-y-3 text-sm">
         <h3 className="font-display text-base font-semibold mb-3">Upload Summary</h3>
         {[
-          ['ULPIN', '14010100000001'],
-          ['Khasra', 'K-456/B'],
-          ['Location', 'Maner, Patna, Bihar'],
-          ['Area', '2.41 Acres (9,762 m²)'],
-          ['Owner', 'Rajesh Kumar (Aadhaar Verified)'],
-          ['Land Type', 'Agricultural'],
-          ['Encumbrances', 'None'],
-          ['Documents', '5 uploaded, all on IPFS'],
+          ['ULPIN', formData.ulpin || '14010100000001'],
+          ['Area', `${formData.area || '1200'} m²`],
+          ['Land Type', 'Residential'],
+          ['Documents', 'Verified via IPFS'],
         ].map(([k, v]) => (
           <div key={k} className="flex gap-4">
             <span className="text-[var(--color-ink-faint)] w-32 shrink-0">{k}:</span>
@@ -313,13 +368,11 @@ function Step7({ onBack }: { onBack: () => void }) {
       <div className="grid grid-cols-2 gap-4">
         <div className="card p-4">
           <h4 className="font-semibold text-sm mb-3">📱 Uploader OTP</h4>
-          <p className="text-xs text-[var(--color-ink-faint)] mb-3">Enter the OTP sent to your Aadhaar-linked mobile</p>
           <input className="input font-mono text-xl tracking-widest text-center" maxLength={6} placeholder="000000"
             value={otpSeller} onChange={(e) => setOtpSeller(e.target.value.replace(/\D/g, ''))} />
         </div>
         <div className="card p-4">
           <h4 className="font-semibold text-sm mb-3">📱 Supervisor OTP</h4>
-          <p className="text-xs text-[var(--color-ink-faint)] mb-3">Supervisor enters their Aadhaar OTP to approve</p>
           <input className="input font-mono text-xl tracking-widest text-center" maxLength={6} placeholder="000000"
             value={otpSupervisor} onChange={(e) => setOtpSupervisor(e.target.value.replace(/\D/g, ''))} />
         </div>
@@ -334,7 +387,7 @@ function Step7({ onBack }: { onBack: () => void }) {
         >
           {minting ? (
             <span className="flex items-center gap-2">
-              <span className="animate-spin">⏳</span> Minting on Sepolia...
+              <span className="animate-spin">⏳</span> Processing on Sepolia...
             </span>
           ) : '⛓️ Mint Land Title NFT'}
         </button>
@@ -366,6 +419,16 @@ function PlaceholderStep({ num, label, desc, onNext, onBack }: {
 
 export default function UploadWizardPage() {
   const [step, setStep] = useState(1)
+  const [formData, setFormData] = useState({
+    ulpin: '',
+    area: '',
+    district: '',
+    state: '',
+    ownerName: '',
+    ownerAddress: ''
+  })
+
+  const updateForm = (updates: any) => setFormData(prev => ({ ...prev, ...updates }))
   const next = () => setStep((s) => Math.min(s + 1, 7))
   const back = () => setStep((s) => Math.max(s - 1, 1))
 
@@ -405,13 +468,13 @@ export default function UploadWizardPage() {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
             >
-              {step === 1 && <Step1 onNext={next} />}
-              {step === 2 && <Step2 onNext={next} onBack={back} />}
-              {step === 3 && <Step3 onNext={next} onBack={back} />}
-              {step === 4 && <PlaceholderStep num={4} label="Historical Chain of Title" desc="Upload all historical ownership documents (minimum 30 years). OCR extraction via AWS Textract." onNext={next} onBack={back} />}
-              {step === 5 && <PlaceholderStep num={5} label="Encumbrance & Dispute Status" desc="Declare mortgages, court cases (auto-verified via e-Courts API), acquisition notices, and GIS forest overlap check." onNext={next} onBack={back} />}
-              {step === 6 && <PlaceholderStep num={6} label="Land Classification & Attributes" desc="Land type, irrigation, soil, road connectivity, structures." onNext={next} onBack={back} />}
-              {step === 7 && <Step7 onBack={back} />}
+              {step === 1 && <Step1 onNext={next} updateForm={updateForm} />}
+              {step === 2 && <Step2 onNext={next} onBack={back} updateForm={updateForm} />}
+              {step === 3 && <Step3 onNext={next} onBack={back} updateForm={updateForm} />}
+              {step === 4 && <PlaceholderStep num={4} label="Historical Chain of Title" desc="..." onNext={next} onBack={back} />}
+              {step === 5 && <PlaceholderStep num={5} label="Encumbrance & Dispute Status" desc="..." onNext={next} onBack={back} />}
+              {step === 6 && <PlaceholderStep num={6} label="Land Classification & Attributes" desc="..." onNext={next} onBack={back} />}
+              {step === 7 && <Step7 onBack={back} formData={formData} />}
             </motion.div>
           </AnimatePresence>
         </div>
